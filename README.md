@@ -1,6 +1,4 @@
-# Ase
-
-### Local Search Engine Implementation with Document Indexing
+## Local Search Engine Implementation with Document Indexing
 
 <br>
 
