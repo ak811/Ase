@@ -2,8 +2,10 @@ name: CI
 
 on:
   push:
-    branches: [ main, master ]
   pull_request:
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -14,15 +16,64 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: '17'
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Unit tests
-        run: ./gradlew :search-core:test :indexer:test
+      - name: Build and run unit tests
+        run: ./gradlew --no-daemon build
 
-      - name: Rebuild the sample index
-        run: ./gradlew :indexer:run --args="--input sample-corpus --output build/sample-index.bin"
+      - name: Package the command-line tools
+        run: ./gradlew --no-daemon :server:installDist :indexer:installDist
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug
+      - name: Index the sample corpus plus UI fixtures
+        run: >
+          indexer/build/install/ase-indexer/bin/ase-indexer
+          --input sample-corpus --input ui-tests/fixtures/ui-extra.jsonl --output build/ui.idx
+
+      - name: Start the server
+        run: |
+          server/build/install/ase-server/bin/ase-server --index build/ui.idx --port 8080 --rate-limit 0 &
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/healthz && exit 0; sleep 1; done
+          exit 1
+
+      - name: API smoke test
+        run: |
+          curl -fsS 'http://127.0.0.1:8080/api/search?q=search+engines' | grep -q '"total":'
+          curl -fsS 'http://127.0.0.1:8080/api/search?q=%DA%A9%D8%AA%D8%A7%D8%A8' | grep -q 'national-library'
+          curl -fsS 'http://127.0.0.1:8080/' | grep -q '<title>'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: ui-tests/package-lock.json
+
+      - name: UI smoke tests
+        working-directory: ui-tests
+        run: |
+          npm ci
+          npm test
+
+      - name: Upload test reports on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: '**/build/reports/tests/'
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the image
+        run: docker build -t ase-search:ci .
+
+      - name: Run the image
+        run: |
+          docker run -d --name ase -p 8080:8080 ase-search:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8080/healthz && break; sleep 1; done
+          curl -fsS 'http://127.0.0.1:8080/api/search?q=tehran' | grep -q '"total":'
+          docker logs ase
