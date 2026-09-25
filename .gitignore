@@ -1,21 +1,20 @@
-# Gradle
+# Build output
 .gradle/
 build/
-local.properties
+out/
 
-# IDE
+# Indexes and temporary index files
+*.idx
+*.idx.*.tmp
+*.idx.*.run
+data/
+
+# IDEs and OS files
 .idea/
 *.iml
+.vscode/
 .DS_Store
+Thumbs.db
 
-# Android
-captures/
-.externalNativeBuild/
-.cxx/
-*.apk
-*.aab
-*.jks
-*.keystore
-
-# Indexer scratch output
-*.bin.tmp
+# UI test dependencies
+node_modules/
