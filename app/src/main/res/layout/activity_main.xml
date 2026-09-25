@@ -1,246 +1,114 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/constraintLayout"
+    android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white"
-    tools:context="com.example.searchengine.MainActivity">
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:menu="@menu/main"
+        app:title="@string/app_name" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/searchLayout"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:hint="@string/search_hint"
+        app:endIconMode="clear_text"
+        app:startIconContentDescription="@string/search_hint"
+        app:startIconDrawable="@drawable/ic_search_24">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/searchInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1"
+            android:textDirection="firstStrong" />
+
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:indeterminate="true"
+        android:visibility="invisible" />
+
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="4dp"
+        android:layout_marginEnd="16dp"
+        android:textAlignment="viewStart"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/correctionText"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:paddingStart="16dp"
+        android:paddingTop="8dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:textAlignment="viewStart"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorPrimary"
+        android:visibility="gone" />
 
     <FrameLayout
-        android:id="@+id/adContainer"
-        android:layout_width="0dp"
-        android:layout_height="64dp"
-        android:layout_alignParentBottom="true"
-        android:layout_centerHorizontal="true"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:background="@android:color/transparent"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-
-    <ImageView
-        android:id="@+id/homeImageView"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="0dp"
-        android:padding="12dp"
-        app:layout_constraintBottom_toBottomOf="@+id/menuLinearLayout"
-        app:layout_constraintEnd_toStartOf="@+id/menuLinearLayout"
-        app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toEndOf="@+id/appNameTextView"
-        app:layout_constraintTop_toTopOf="@+id/menuLinearLayout"
-        app:srcCompat="@drawable/ic_home_gray_24dp"
-        android:contentDescription="@string/home" />
-
-    <ImageView
-        android:id="@+id/goForwardImageView"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintBottom_toBottomOf="@+id/goBackImageView"
-        app:layout_constraintEnd_toStartOf="@+id/appNameTextView"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toEndOf="@+id/goBackImageView"
-        app:layout_constraintTop_toTopOf="@+id/goBackImageView"
-        app:srcCompat="@drawable/ic_keyboard_arrow_right_black_24dp"
-        android:contentDescription="@string/forward" />
-
-    <ImageView
-        android:id="@+id/goBackImageView"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:layout_marginStart="16dp"
-        app:layout_constraintBottom_toBottomOf="@+id/appNameTextView"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/appNameTextView"
-        app:srcCompat="@drawable/ic_keyboard_arrow_left_black_24dp"
-        android:contentDescription="@string/go_back" />
-
-    <ImageView
-        android:id="@+id/menuImageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/ic_more_vert_black_24dp"
-        android:contentDescription="@string/menu" />
-
-    <ImageView
-        android:id="@+id/googleLargeImageView"
-        android:layout_width="150dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="64dp"
-        android:layout_marginEnd="8dp"
-        app:layout_constraintBottom_toTopOf="@+id/contentSearchEditText"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/divider3"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:srcCompat="@drawable/google_typograpgy"
-        android:contentDescription="@string/google" />
-
-    <LinearLayout
-        android:id="@+id/searchButtonLinearLayout"
-        android:layout_width="56dp"
+        android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginEnd="32dp"
-        android:background="@drawable/round_rect_2_side_blue"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="@+id/contentSearchEditText"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@+id/contentSearchEditText"
-        app:layout_constraintTop_toTopOf="@+id/contentSearchEditText">
+        android:layout_weight="1">
 
-    </LinearLayout>
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/resultsList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingBottom="16dp"
+            android:visibility="gone" />
 
-    <LinearLayout
-        android:id="@+id/menuLinearLayout"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="@+id/menuImageView"
-        app:layout_constraintEnd_toEndOf="@+id/menuImageView"
-        app:layout_constraintStart_toStartOf="@+id/menuImageView"
-        app:layout_constraintTop_toTopOf="@+id/menuImageView" />
+        <LinearLayout
+            android:id="@+id/messagePanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="32dp">
 
-    <ProgressBar
-        android:id="@+id/progressBar"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="0dp"
-        android:layout_height="5dp"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="@id/divider3"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/divider3" />
+            <TextView
+                android:id="@+id/messageText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
 
-    <View
-        android:id="@+id/divider3"
-        android:layout_width="0dp"
-        android:layout_height="3dp"
-        android:layout_marginTop="8dp"
-        android:background="@drawable/smooth_shadow_linear_layout"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/appNameTextView" />
+            <Button
+                android:id="@+id/importButton"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/import_index"
+                android:visibility="gone" />
 
-    <View
-        android:id="@+id/divider2"
-        android:layout_width="200dp"
-        android:layout_height="1dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:background="?android:attr/listDivider"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="@+id/resultTextView"
-        app:layout_constraintEnd_toEndOf="@+id/resultTextView"
-        app:layout_constraintStart_toStartOf="@+id/resultTextView" />
+        </LinearLayout>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/resultTextView" />
+    </FrameLayout>
 
-    <com.example.searchengine.ui.IranYekanEditText
-        android:id="@+id/contentSearchEditText"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:layout_marginStart="32dp"
-        android:background="@drawable/round_rect_2_side_left"
-        android:ems="10"
-        android:hint="@string/searchEditText"
-        android:imeOptions="actionSearch"
-        android:inputType="textWebEditText"
-        android:paddingStart="44dp"
-        android:paddingEnd="10dp"
-        android:textColor="@color/black"
-        android:textDirection="rtl"
-        android:textSize="22sp"
-        app:layout_constraintEnd_toStartOf="@+id/searchButtonLinearLayout"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/googleLargeImageView"
-        app:layout_constraintVertical_chainStyle="packed" />
-
-    <com.example.searchengine.ui.IranYekanTextView
-        android:id="@+id/appNameTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/google"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/menuImageView"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/menuImageView" />
-
-    <com.example.searchengine.ui.IranYekanTextView
-        android:id="@+id/infoTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:textColor="@color/blue"
-        android:textSize="32sp"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/divider3" />
-
-    <com.example.searchengine.ui.IranYekanTextView
-        android:id="@+id/resultTextView"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"
-        android:gravity="center"
-        android:textStyle="bold"
-        android:text="@string/resultsTextView"
-        android:textSize="24sp"
-        android:visibility="invisible"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/infoTextView" />
-
-    <ImageView
-        android:id="@+id/searchImageView"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:visibility="visible"
-        app:layout_constraintBottom_toBottomOf="@+id/searchButtonLinearLayout"
-        app:layout_constraintEnd_toEndOf="@+id/searchButtonLinearLayout"
-        app:layout_constraintStart_toStartOf="@+id/searchButtonLinearLayout"
-        app:layout_constraintTop_toTopOf="@+id/searchButtonLinearLayout"
-        app:srcCompat="@drawable/ic_search_white_24dp"
-        android:contentDescription="@string/searchButton" />
-
-    <ImageView
-        android:id="@+id/closeImageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:visibility="invisible"
-        app:layout_constraintBottom_toBottomOf="@+id/contentSearchEditText"
-        app:layout_constraintStart_toStartOf="@+id/contentSearchEditText"
-        app:layout_constraintTop_toTopOf="@+id/contentSearchEditText"
-        app:srcCompat="@drawable/ic_close_black_24dp"
-        android:contentDescription="@string/delete" />
-
-</androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

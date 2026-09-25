@@ -1,0 +1,25 @@
+plugins {
+    id 'application'
+}
+
+application {
+    mainClass = 'io.github.ak811.ase.indexer.IndexerCli'
+    applicationName = 'ase-indexer'
+    applicationDefaultJvmArgs = ['-Xmx2g', '-Dfile.encoding=UTF-8']
+}
+
+// Relative --input/--output paths resolve against the repository root.
+tasks.named('run') {
+    workingDir = rootProject.projectDir
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 11
+    options.encoding = 'UTF-8'
+}
+
+dependencies {
+    implementation project(':search-core')
+    implementation 'org.jsoup:jsoup:1.18.1'
+    testImplementation 'junit:junit:4.13.2'
+}

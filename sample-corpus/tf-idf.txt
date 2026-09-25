@@ -1,0 +1,2 @@
+TF-IDF weighting
+TF-IDF combines term frequency with inverse document frequency. Words that appear often in one document but rarely across the collection receive the highest weights. This engine uses logarithmic term frequency and cosine length normalization.

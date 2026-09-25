@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Unit tests
+        run: ./gradlew :search-core:test :indexer:test
+
+      - name: Rebuild the sample index
+        run: ./gradlew :indexer:run --args="--input sample-corpus --output build/sample-index.bin"
+
+      - name: Build debug APK
+        run: ./gradlew :app:assembleDebug

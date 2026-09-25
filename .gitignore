@@ -1,2 +1,21 @@
-# Project exclude paths
-/.gradle/
+# Gradle
+.gradle/
+build/
+local.properties
+
+# IDE
+.idea/
+*.iml
+.DS_Store
+
+# Android
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# Indexer scratch output
+*.bin.tmp

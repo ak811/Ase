@@ -1,0 +1,15 @@
+plugins {
+    id 'java-library'
+}
+
+// Compiled against the Java 8 API so the library runs on every supported
+// Android version (minSdk 24) without core-library desugaring.
+tasks.withType(JavaCompile).configureEach {
+    options.release = 8
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-Xlint:all,-options']
+}
+
+dependencies {
+    testImplementation 'junit:junit:4.13.2'
+}

@@ -1,15 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">جستجو</string>
-    <string name="url">URL</string>
-    <string name="textView">TextView</string>
-    <string name="title">title</string>
-    <string name="home">home</string>
-    <string name="forward">Forward</string>
-    <string name="go_back">Go Back</string>
-    <string name="menu">Menu</string>
-    <string name="google">Google</string>
-    <string name="searchEditText">جستجو …</string>
-    <string name="resultsTextView">2 نتیحه در 0.3 ثانیه</string>
-    <string name="searchButton">Search Button</string>
-    <string name="delete">Delete</string>
+    <string name="app_name">Ase</string>
+    <string name="search_hint">Search</string>
+    <string name="loading_index">Loading index…</string>
+    <string name="no_index">No search index is available.\nBuild one with the indexer tool, then import it here.</string>
+    <string name="index_error">Couldn\'t load the search index.\n%1$s</string>
+    <string name="import_index">Import index…</string>
+    <string name="restore_bundled_index">Use built-in index</string>
+    <plurals name="documents_indexed">
+        <item quantity="one">%1$s document indexed</item>
+        <item quantity="other">%1$s documents indexed</item>
+    </plurals>
+    <plurals name="index_imported">
+        <item quantity="one">Index imported: %1$s document</item>
+        <item quantity="other">Index imported: %1$s documents</item>
+    </plurals>
+    <plurals name="results_summary">
+        <item quantity="one">%1$s result (%2$s seconds)</item>
+        <item quantity="other">%1$s results (%2$s seconds)</item>
+    </plurals>
+    <string name="showing_results_for">Showing results for “%1$s”.\nSearch instead for “%2$s”</string>
+    <string name="partial_matches">No document contains all of your words; showing partial matches.</string>
+    <string name="no_results">No results for “%1$s”.</string>
+    <string name="empty_query">Type something to search.</string>
+    <string name="search_error">Search failed: %1$s</string>
+    <string name="import_failed">Couldn\'t import the index: %1$s</string>
+    <string name="cannot_open_link">No app can open this link.</string>
+    <string name="untitled">(untitled)</string>
+    <string name="out_of_memory">The index is too large for this device\'s memory.</string>
+    <string name="unknown_error">Unknown error</string>
 </resources>
