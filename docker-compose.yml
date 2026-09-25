@@ -1,0 +1,25 @@
+# docker compose up --build   →   http://localhost:8080/   (serves the bundled sample index)
+#
+# To serve your own documents:
+#   1. Uncomment the two volumes below and put your files in ./my-corpus.
+#   2. Build the index:  docker compose run --rm --entrypoint ase-indexer search --input /corpus --output /data/index.idx
+#   3. Start (or keep running) the server:  docker compose up -d
+# Re-running step 2 later is safe: the server notices the new file within ASE_RELOAD_SECONDS
+# and switches to it without downtime.
+services:
+  search:
+    build: .
+    image: ase-search:latest
+    ports:
+      - "8080:8080"
+    environment:
+      ASE_SITE_NAME: "Ase"
+      ASE_RATE_LIMIT: "120"
+      # ASE_TRUST_PROXY: "true"   # only behind a reverse proxy that sets X-Forwarded-For
+    # volumes:
+    #   - ./data:/data
+    #   - ./my-corpus:/corpus:ro
+    read_only: true
+    tmpfs:
+      - /tmp
+    restart: unless-stopped
