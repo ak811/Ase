@@ -4,10 +4,8 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -15,7 +13,9 @@ import java.util.stream.Stream;
  * <ul>
  *   <li>{@code .xml} — WebIR records (see {@link WebIrXmlReader})</li>
  *   <li>{@code .html}, {@code .htm} — one document per file; title from {@code <title>}</li>
- *   <li>{@code .txt} — one document per file; first non-blank line is the title, UTF-8</li>
+ *   <li>{@code .txt}, {@code .md}, {@code .markdown} — one document per file; first non-blank line is
+ *       the title (a leading Markdown {@code #} is removed), UTF-8</li>
+ *   <li>{@code .jsonl}, {@code .ndjson} — one JSON document per line (see {@link JsonLinesReader})</li>
  * </ul>
  * Local files are identified by their path relative to the input root, using
  * forward slashes, so no machine-specific paths end up in the index.
@@ -23,10 +23,12 @@ import java.util.stream.Stream;
 final class CorpusLoader {
     private final HtmlTextExtractor html;
     private final WebIrXmlReader xml;
+    private final JsonLinesReader jsonLines;
 
-    CorpusLoader(HtmlTextExtractor html, WebIrXmlReader xml) {
+    CorpusLoader(HtmlTextExtractor html, WebIrXmlReader xml, JsonLinesReader jsonLines) {
         this.html = html;
         this.xml = xml;
+        this.jsonLines = jsonLines;
     }
 
     /** Supported files under {@code input} (or {@code input} itself), in a stable order. */
@@ -36,16 +38,17 @@ final class CorpusLoader {
                 return paths.filter(Files::isRegularFile)
                         .filter(CorpusLoader::isSupported)
                         .sorted()
-                        .collect(Collectors.toList());
+                        .toList();
             }
         }
         if (!Files.isRegularFile(input)) {
             throw new IOException("input not found: " + input);
         }
         if (!isSupported(input)) {
-            throw new IOException("unsupported file type (expected .xml, .html, .htm or .txt): " + input);
+            throw new IOException("unsupported file type (expected .xml, .html, .htm, .txt, .md, .jsonl or .ndjson): "
+                    + input);
         }
-        return Collections.singletonList(input);
+        return List.of(input);
     }
 
     /** Loads one file; returns the number of documents it produced. */
@@ -60,10 +63,15 @@ final class CorpusLoader {
                 sink.accept(relativeName(root, file), text.title, text.body);
                 return 1;
             }
-            case "txt": {
+            case "txt":
+            case "md":
+            case "markdown": {
                 loadText(root, file, sink);
                 return 1;
             }
+            case "jsonl":
+            case "ndjson":
+                return jsonLines.read(file, sink);
             default:
                 throw new IOException("unsupported file type: " + file);
         }
@@ -77,8 +85,8 @@ final class CorpusLoader {
         String title = "";
         String body = content;
         for (String line : content.split("\\R", -1)) {
-            if (!line.trim().isEmpty()) {
-                title = line.trim();
+            if (!line.isBlank()) {
+                title = line.trim().replaceFirst("^#+\\s*", "");
                 int titleEnd = content.indexOf(line) + line.length();
                 body = content.substring(titleEnd);
                 break;
@@ -103,6 +111,10 @@ final class CorpusLoader {
             case "html":
             case "htm":
             case "txt":
+            case "md":
+            case "markdown":
+            case "jsonl":
+            case "ndjson":
                 return true;
             default:
                 return false;

@@ -2,10 +2,18 @@ plugins {
     id 'application'
 }
 
+description = 'Command-line indexer: corpus files in, index file out'
+
 application {
     mainClass = 'io.github.ak811.ase.indexer.IndexerCli'
     applicationName = 'ase-indexer'
-    applicationDefaultJvmArgs = ['-Xmx2g', '-Dfile.encoding=UTF-8']
+    applicationDefaultJvmArgs = ['-Xmx1g', '-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8']
+}
+
+dependencies {
+    implementation project(':search-core')
+    implementation 'org.jsoup:jsoup:1.18.1'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 // Relative --input/--output paths resolve against the repository root.
@@ -13,13 +21,15 @@ tasks.named('run') {
     workingDir = rootProject.projectDir
 }
 
-tasks.withType(JavaCompile).configureEach {
-    options.release = 11
-    options.encoding = 'UTF-8'
-}
-
-dependencies {
-    implementation project(':search-core')
-    implementation 'org.jsoup:jsoup:1.18.1'
-    testImplementation 'junit:junit:4.13.2'
+// ./gradlew sampleIndex  →  build/sample.idx from sample-corpus/
+tasks.register('sampleIndex', JavaExec) {
+    group = 'application'
+    description = 'Indexes sample-corpus/ into build/sample.idx.'
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('io.github.ak811.ase.indexer.IndexerCli')
+    workingDir = rootProject.projectDir
+    jvmArgs '-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8'
+    args '--input', 'sample-corpus', '--output', 'build/sample.idx'
+    inputs.dir(rootProject.file('sample-corpus'))
+    outputs.file(rootProject.file('build/sample.idx'))
 }

@@ -45,7 +45,7 @@ final class WebIrXmlReader {
         }
     }
 
-    int read(InputStream in, HtmlTextExtractor html, DocumentSink sink) throws XMLStreamException {
+    int read(InputStream in, HtmlTextExtractor html, DocumentSink sink) throws XMLStreamException, IOException {
         XMLStreamReader reader = factory.createXMLStreamReader(in);
         try {
             int records = 0;
