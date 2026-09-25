@@ -10,7 +10,7 @@ import java.util.Set;
  * same (س ص ث, ز ذ ض ظ, ت ط, ح ه, ق غ) or because they sit next to each other /
  * differ by one dot on common keyboards (ک گ, ب پ, ج چ, ز ژ, ر ز, د ذ, ح خ).
  * Arabic/Persian variants of the same letter (ي/ی, ك/ک) are not listed here
- * because {@link io.github.ak811.ase.core.text.PersianNormalizer} already unifies them.
+ * because {@link io.github.ak811.ase.core.analysis.Analyzer} already unifies them.
  */
 public final class ConfusableLetters {
     private static final String[] GROUPS = {

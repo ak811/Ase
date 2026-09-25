@@ -1,54 +1,42 @@
 package io.github.ak811.ase.core.search;
 
-/** Immutable search parameters. Start from {@link #defaults()} and use the {@code with…} methods. */
-public final class SearchOptions {
-    public static final int MAX_LIMIT = 1000;
+/**
+ * Paging and behaviour of one search.
+ *
+ * @param offset      index of the first hit to return
+ * @param limit       maximum number of hits to return (1–100)
+ * @param autoCorrect replace words missing from the corpus with spelling suggestions
+ */
+public record SearchOptions(int offset, int limit, boolean autoCorrect) {
+    public static final int MAX_LIMIT = 100;
+    /** Deepest hit that can be requested; deep paging is expensive and rarely useful. */
+    public static final int MAX_WINDOW = 10_000;
 
-    private static final SearchOptions DEFAULTS = new SearchOptions(0, 20, true);
-
-    private final int offset;
-    private final int limit;
-    private final boolean autoCorrect;
-
-    private SearchOptions(int offset, int limit, boolean autoCorrect) {
+    public SearchOptions {
         if (offset < 0) {
             throw new IllegalArgumentException("offset must be >= 0");
         }
         if (limit < 1 || limit > MAX_LIMIT) {
             throw new IllegalArgumentException("limit must be between 1 and " + MAX_LIMIT);
         }
-        this.offset = offset;
-        this.limit = limit;
-        this.autoCorrect = autoCorrect;
+        if ((long) offset + limit > MAX_WINDOW) {
+            throw new IllegalArgumentException("offset + limit must not exceed " + MAX_WINDOW);
+        }
     }
 
-    /** offset 0, limit 20, auto-correct on. */
     public static SearchOptions defaults() {
-        return DEFAULTS;
+        return new SearchOptions(0, 10, true);
     }
 
-    public SearchOptions withOffset(int offset) {
-        return new SearchOptions(offset, limit, autoCorrect);
+    public SearchOptions withOffset(int value) {
+        return new SearchOptions(value, limit, autoCorrect);
     }
 
-    public SearchOptions withLimit(int limit) {
-        return new SearchOptions(offset, limit, autoCorrect);
+    public SearchOptions withLimit(int value) {
+        return new SearchOptions(offset, value, autoCorrect);
     }
 
-    /** When enabled, query terms missing from the index are replaced by spelling suggestions. */
-    public SearchOptions withAutoCorrect(boolean autoCorrect) {
-        return new SearchOptions(offset, limit, autoCorrect);
-    }
-
-    public int offset() {
-        return offset;
-    }
-
-    public int limit() {
-        return limit;
-    }
-
-    public boolean autoCorrect() {
-        return autoCorrect;
+    public SearchOptions withAutoCorrect(boolean value) {
+        return new SearchOptions(offset, limit, value);
     }
 }

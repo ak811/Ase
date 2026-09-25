@@ -1,33 +1,34 @@
 package io.github.ak811.ase.core.search;
 
-import io.github.ak811.ase.core.text.Token;
-import io.github.ak811.ase.core.text.Tokenizer;
+import io.github.ak811.ase.core.analysis.Analyzer;
+import io.github.ak811.ase.core.analysis.Token;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-/** Produces highlighted titles and query-focused excerpts. Stateless and thread-safe. */
+/** Produces highlighted titles and query-focused excerpts. Thread-safe. */
 public final class SnippetGenerator {
-    public static final int DEFAULT_MAX_LENGTH = 220;
+    public static final int DEFAULT_MAX_LENGTH = 240;
+    /** Only the start of very long bodies is scanned for matches. */
+    static final int MAX_SCANNED_CHARS = 200_000;
 
     private static final String ELLIPSIS = "…";
     private static final int MAX_ANCHORS = 256;
 
-    private final Tokenizer tokenizer;
+    private final Analyzer analyzer;
     private final int maxLength;
 
-    public SnippetGenerator() {
-        this(new Tokenizer(), DEFAULT_MAX_LENGTH);
+    public SnippetGenerator(Analyzer analyzer) {
+        this(analyzer, DEFAULT_MAX_LENGTH);
     }
 
-    public SnippetGenerator(Tokenizer tokenizer, int maxLength) {
-        if (maxLength < 20) {
-            throw new IllegalArgumentException("maxLength must be >= 20");
+    public SnippetGenerator(Analyzer analyzer, int maxLength) {
+        if (maxLength < 40) {
+            throw new IllegalArgumentException("maxLength must be >= 40");
         }
-        this.tokenizer = tokenizer;
+        this.analyzer = analyzer;
         this.maxLength = maxLength;
     }
 
@@ -41,13 +42,12 @@ public final class SnippetGenerator {
     }
 
     /**
-     * A window of at most about {@code maxLength} characters around the region with
-     * the most distinct query terms, cut at word boundaries, with ellipses where
-     * text was omitted.
+     * About {@code maxLength} characters around the region with the most distinct query
+     * terms, cut at word boundaries, with ellipses where text was omitted.
      */
     public Snippet excerpt(String text, Set<String> terms) {
         if (text.isEmpty()) {
-            return new Snippet("", Collections.<Highlight>emptyList());
+            return Snippet.plain("");
         }
         List<Token> matches = matches(text, terms);
         int length = text.length();
@@ -73,7 +73,6 @@ public final class SnippetGenerator {
                 end = backToBoundary(text, end, anchor.end());
             }
         }
-
         if (start > 0 && start < length && Character.isLowSurrogate(text.charAt(start))) {
             start++;
         }
@@ -96,7 +95,6 @@ public final class SnippetGenerator {
         if (end < length) {
             snippet.append(ELLIPSIS);
         }
-
         List<Highlight> highlights = new ArrayList<>();
         for (Token match : matches) {
             if (match.start() >= start && match.end() <= end) {
@@ -108,18 +106,21 @@ public final class SnippetGenerator {
 
     private List<Token> matches(String text, Set<String> terms) {
         List<Token> matches = new ArrayList<>();
-        if (terms.isEmpty()) {
+        if (terms.isEmpty() || text.isEmpty()) {
             return matches;
         }
-        for (Token token : tokenizer.tokenize(text)) {
-            if (terms.contains(token.term())) {
-                matches.add(token);
+        String scanned = text.length() > MAX_SCANNED_CHARS ? text.substring(0, MAX_SCANNED_CHARS) : text;
+        int lastEnd = 0;
+        for (Token token : analyzer.analyze(scanned)) {
+            // CJK bigrams overlap; keep highlights disjoint by trimming to the previous end.
+            if (terms.contains(token.term()) && token.end() > lastEnd) {
+                matches.add(token.start() < lastEnd ? token.shiftStart(lastEnd) : token);
+                lastEnd = token.end();
             }
         }
         return matches;
     }
 
-    /** The match whose window covers the most distinct terms; earliest wins ties. */
     private Token bestAnchor(List<Token> matches) {
         int limit = Math.min(matches.size(), MAX_ANCHORS);
         Token best = matches.get(0);
@@ -140,7 +141,6 @@ public final class SnippetGenerator {
         return best;
     }
 
-    /** Moves {@code position} forward to the start of a word, but not past {@code limit}. */
     private static int forwardToBoundary(String text, int position, int limit) {
         for (int i = position; i < limit; i++) {
             if (Character.isWhitespace(text.charAt(i - 1))) {
@@ -150,7 +150,6 @@ public final class SnippetGenerator {
         return position;
     }
 
-    /** Moves {@code position} back to a word end, but not before {@code limit}. */
     private static int backToBoundary(String text, int position, int limit) {
         for (int i = position; i > limit; i--) {
             if (Character.isWhitespace(text.charAt(i))) {

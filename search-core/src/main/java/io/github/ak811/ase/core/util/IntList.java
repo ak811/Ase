@@ -2,7 +2,7 @@ package io.github.ak811.ase.core.util;
 
 import java.util.Arrays;
 
-/** A minimal growable {@code int} array that avoids boxing in hot paths. */
+/** A growable {@code int} array that avoids boxing in hot paths. */
 public final class IntList {
     private int[] values;
     private int size;
@@ -17,7 +17,7 @@ public final class IntList {
 
     public void add(int value) {
         if (size == values.length) {
-            values = Arrays.copyOf(values, grow(values.length));
+            values = Arrays.copyOf(values, ByteList.grow(values.length));
         }
         values[size++] = value;
     }
@@ -33,19 +33,15 @@ public final class IntList {
         return size;
     }
 
+    public boolean isEmpty() {
+        return size == 0;
+    }
+
     public void clear() {
         size = 0;
     }
 
     public int[] toArray() {
         return Arrays.copyOf(values, size);
-    }
-
-    static int grow(int capacity) {
-        int next = capacity + (capacity >> 1) + 1;
-        if (next < 0) {
-            throw new OutOfMemoryError("IntList capacity overflow");
-        }
-        return next;
     }
 }

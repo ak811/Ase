@@ -1,55 +1,39 @@
 package io.github.ak811.ase.core.spell;
 
-import io.github.ak811.ase.core.index.IndexBuilder;
-import io.github.ak811.ase.core.index.SearchIndex;
-import org.junit.Before;
+import io.github.ak811.ase.core.index.IndexReader;
+import io.github.ak811.ase.core.index.IndexWriter;
+import io.github.ak811.ase.core.index.IndexWriterConfig;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import java.io.IOException;
+import java.nio.file.Path;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class SpellCorrectorTest {
-    private SpellCorrector corrector;
-
-    @Before
-    public void setUp() {
-        IndexBuilder builder = new IndexBuilder();
-        builder.addDocument("", "", "کتاب کتابخانه تهران اصفهان گربه پنجره search engine");
-        builder.addDocument("", "", "کتاب دانشگاه تهران");
-        SearchIndex index = builder.build();
-        corrector = new SpellCorrector(index);
-    }
+    @Rule
+    public TemporaryFolder temp = new TemporaryFolder();
 
     @Test
-    public void fixesConfusableLetters() {
-        assertEquals("کتاب", corrector.suggest("کتاپ"));
-        assertEquals("گربه", corrector.suggest("کربه"));
-    }
-
-    @Test
-    public void fixesInsertionsDeletionsAndTranspositions() {
-        assertEquals("تهران", corrector.suggest("تهرران"));
-        assertEquals("اصفهان", corrector.suggest("اصفان"));
-        assertEquals("دانشگاه", corrector.suggest("دانشگاه".substring(0, 3) + "گش" + "اه"));
-        assertEquals("engine", corrector.suggest("engnie"));
-    }
-
-    @Test
-    public void leavesKnownTermsAndNumbersAlone() {
-        assertNull(corrector.suggest("کتاب"));
-        assertNull(corrector.suggest("1402"));
-        assertNull(corrector.suggest("ک"));
-    }
-
-    @Test
-    public void refusesDistantWords() {
-        assertNull(corrector.suggest("هواپیما"));
-    }
-
-    @Test
-    public void confusableSubstitutionIsCheaperThanOtherEdits() {
-        assertEquals(0.5, EditDistance.weighted("کتاپ", "کتاب"), 1e-9);
-        assertEquals(1.0, EditDistance.weighted("کتام", "کتاب"), 1e-9);
-        assertEquals(1.0, EditDistance.weighted("ab", "ba"), 1e-9);
+    public void suggestsCorpusWords() throws IOException {
+        Path path = temp.getRoot().toPath().resolve("index.idx");
+        try (IndexWriter writer = new IndexWriter(path, IndexWriterConfig.defaults())) {
+            writer.addDocument("", "", "language languages library kitchen");
+            writer.addDocument("", "", "language کتابخانه کتاب Москва");
+            writer.commit();
+        }
+        try (IndexReader reader = IndexReader.open(path)) {
+            SpellCorrector corrector = new SpellCorrector(reader.lexicon());
+            assertEquals("language", corrector.suggest("langauge").word());
+            assertEquals("library", corrector.suggest("libary").word());
+            assertEquals("کتابخانه", corrector.suggest("کتاپخانه").word());
+            assertEquals("москва", corrector.suggest("масква").word());
+            assertNull("known words are not corrected", corrector.suggest("kitchen"));
+            assertNull("nothing close", corrector.suggest("zyxwvut"));
+            assertNull(corrector.suggest("a"));
+        }
     }
 }

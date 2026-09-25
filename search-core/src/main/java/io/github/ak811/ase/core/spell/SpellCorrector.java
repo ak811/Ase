@@ -1,6 +1,6 @@
 package io.github.ak811.ase.core.spell;
 
-import io.github.ak811.ase.core.index.SearchIndex;
+import io.github.ak811.ase.core.index.Lexicon;
 import io.github.ak811.ase.core.util.IntList;
 
 import java.util.ArrayList;
@@ -12,100 +12,100 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Suggests an indexed term for a query term that is not in the index.
+ * Suggests a word from the corpus for a word that does not occur in it. Works for any
+ * alphabetic script; Persian also gets confusable-letter handling.
  *
  * <ol>
- *   <li><b>Confusable letters.</b> Try swapping each letter for a commonly
- *       confused one (e.g. {@code کتاپ → کتاب}); pick the variant found in the
- *       most documents.</li>
- *   <li><b>Character bigrams.</b> Candidates sharing boundary-padded bigrams are
- *       scored by Jaccard similarity, filtered by a weighted edit distance, and
- *       ranked by (distance, document frequency, similarity).</li>
+ *   <li><b>Confusable letters.</b> Swap one letter for a commonly confused one
+ *       ({@code کتاپ → کتاب}); take the variant found in the most documents.</li>
+ *   <li><b>Character bigrams.</b> Words sharing boundary-padded bigrams are scored by Jaccard
+ *       similarity, filtered by an edit distance in which confusable substitutions cost 0.5,
+ *       and ranked by (distance, document frequency, similarity).</li>
  * </ol>
  *
- * Suggestions are always terms that exist in the index, so a corrected query
- * can actually return results. Instances are thread-safe.
+ * Only the most frequent {@code maxWords} words are candidates, which bounds memory.
+ * Suggestions always come from the corpus, so a corrected query can return results.
+ * Thread-safe.
  */
 public final class SpellCorrector {
-    private static final int MIN_TERM_LENGTH = 2;
-    private static final int MAX_TERM_LENGTH = 32;
+    public static final int DEFAULT_MAX_WORDS = 300_000;
+
+    private static final int MIN_WORD_LENGTH = 2;
+    private static final int MAX_WORD_LENGTH = 32;
     private static final int MAX_LENGTH_DIFFERENCE = 2;
     private static final double MIN_JACCARD = 0.3;
     private static final double EPSILON = 1e-9;
-    private static final char WORD_START = '^';
-    private static final char WORD_END = '$';
 
-    private final SearchIndex index;
-    private final String[] vocabulary;
-    private final int[] documentFrequency;
+    private final Lexicon lexicon;
+    private final int[] lexiconIds;
     private final int[] bigramCounts;
     private final Map<String, int[]> bigramIndex;
 
     // Scratch space reused across calls; guarded by "this".
-    private final int[] sharedBigrams;
+    private final int[] shared;
     private final IntList touched = new IntList();
 
-    public SpellCorrector(SearchIndex index) {
-        this.index = index;
-        List<String> words = new ArrayList<>();
-        for (String term : index.vocabulary()) {
-            if (isCorrectable(term)) {
-                words.add(term);
+    public SpellCorrector(Lexicon lexicon) {
+        this(lexicon, DEFAULT_MAX_WORDS);
+    }
+
+    public SpellCorrector(Lexicon lexicon, int maxWords) {
+        this.lexicon = lexicon;
+        List<Integer> candidates = new ArrayList<>();
+        for (int i = 0; i < lexicon.size(); i++) {
+            if (isCorrectable(lexicon.word(i))) {
+                candidates.add(i);
             }
         }
-        Collections.sort(words);
-        vocabulary = words.toArray(new String[0]);
-        documentFrequency = new int[vocabulary.length];
-        bigramCounts = new int[vocabulary.length];
-
+        if (candidates.size() > maxWords) {
+            candidates.sort((a, b) -> Integer.compare(lexicon.documentFrequency(b), lexicon.documentFrequency(a)));
+            candidates = new ArrayList<>(candidates.subList(0, maxWords));
+            Collections.sort(candidates);
+        }
+        lexiconIds = new int[candidates.size()];
+        bigramCounts = new int[candidates.size()];
         Map<String, IntList> lists = new HashMap<>();
-        for (int id = 0; id < vocabulary.length; id++) {
-            documentFrequency[id] = index.documentFrequency(vocabulary[id]);
-            Set<String> bigrams = bigrams(vocabulary[id]);
-            bigramCounts[id] = bigrams.size();
+        for (int local = 0; local < candidates.size(); local++) {
+            lexiconIds[local] = candidates.get(local);
+            Set<String> bigrams = bigrams(lexicon.word(lexiconIds[local]));
+            bigramCounts[local] = bigrams.size();
             for (String bigram : bigrams) {
-                IntList list = lists.get(bigram);
-                if (list == null) {
-                    list = new IntList(4);
-                    lists.put(bigram, list);
-                }
-                list.add(id);
+                lists.computeIfAbsent(bigram, k -> new IntList(4)).add(local);
             }
         }
         bigramIndex = new HashMap<>(lists.size() * 4 / 3 + 1);
         for (Map.Entry<String, IntList> entry : lists.entrySet()) {
             bigramIndex.put(entry.getKey(), entry.getValue().toArray());
         }
-        sharedBigrams = new int[vocabulary.length];
+        shared = new int[candidates.size()];
     }
 
     /**
-     * Returns the best indexed replacement for {@code term}, or {@code null} if the
-     * term is already indexed, is not a word (e.g. a number), or nothing is close enough.
-     * {@code term} must already be normalized (see {@link io.github.ak811.ase.core.text.Tokenizer}).
+     * Returns a corpus word close to {@code word} (a normalized, unstemmed surface form),
+     * or {@code null} if the word already occurs in the corpus or nothing is close enough.
      */
-    public synchronized String suggest(String term) {
-        if (term == null || !isCorrectable(term) || index.contains(term)) {
+    public synchronized Correction suggest(String word) {
+        if (word == null || !isCorrectable(word) || lexicon.indexOf(word) >= 0) {
             return null;
         }
-        String variant = bestConfusableVariant(term);
-        return variant != null ? variant : bestBigramCandidate(term);
+        int best = bestConfusableVariant(word);
+        if (best < 0) {
+            best = bestBigramCandidate(word);
+        }
+        return best < 0 ? null : new Correction(lexicon.word(best), lexicon.display(best));
     }
 
-    private String bestConfusableVariant(String term) {
-        char[] chars = term.toCharArray();
-        String best = null;
-        int bestFrequency = 0;
+    private int bestConfusableVariant(String word) {
+        char[] chars = word.toCharArray();
+        int best = -1;
         for (int i = 0; i < chars.length; i++) {
             char original = chars[i];
             for (char alternative : ConfusableLetters.alternativesFor(original)) {
                 chars[i] = alternative;
-                String candidate = new String(chars);
-                int frequency = index.documentFrequency(candidate);
-                if (frequency > bestFrequency
-                        || (frequency > 0 && frequency == bestFrequency && candidate.compareTo(best) < 0)) {
-                    best = candidate;
-                    bestFrequency = frequency;
+                int index = lexicon.indexOf(new String(chars));
+                if (index >= 0 && (best < 0 || lexicon.documentFrequency(index) > lexicon.documentFrequency(best)
+                        || (lexicon.documentFrequency(index) == lexicon.documentFrequency(best) && index < best))) {
+                    best = index;
                 }
             }
             chars[i] = original;
@@ -113,78 +113,81 @@ public final class SpellCorrector {
         return best;
     }
 
-    private String bestBigramCandidate(String term) {
-        Set<String> queryBigrams = bigrams(term);
+    private int bestBigramCandidate(String word) {
+        Set<String> queryBigrams = bigrams(word);
         touched.clear();
         for (String bigram : queryBigrams) {
             int[] ids = bigramIndex.get(bigram);
             if (ids == null) {
                 continue;
             }
-            for (int id : ids) {
-                if (Math.abs(vocabulary[id].length() - term.length()) > MAX_LENGTH_DIFFERENCE) {
+            for (int local : ids) {
+                if (Math.abs(lexicon.word(lexiconIds[local]).length() - word.length()) > MAX_LENGTH_DIFFERENCE) {
                     continue;
                 }
-                if (sharedBigrams[id]++ == 0) {
-                    touched.add(id);
+                if (shared[local]++ == 0) {
+                    touched.add(local);
                 }
             }
         }
 
-        double maxDistance = term.length() <= 4 ? 1.0 : 2.0;
-        int bestId = -1;
+        double maxDistance = word.length() <= 4 ? 1.0 : 2.0;
+        int best = -1;
         double bestDistance = Double.MAX_VALUE;
         double bestJaccard = 0;
         for (int i = 0; i < touched.size(); i++) {
-            int id = touched.get(i);
-            int shared = sharedBigrams[id];
-            sharedBigrams[id] = 0;
-            double jaccard = shared / (double) (queryBigrams.size() + bigramCounts[id] - shared);
+            int local = touched.get(i);
+            int common = shared[local];
+            shared[local] = 0;
+            double jaccard = common / (double) (queryBigrams.size() + bigramCounts[local] - common);
             if (jaccard < MIN_JACCARD) {
                 continue;
             }
-            double distance = EditDistance.weighted(term, vocabulary[id]);
+            int index = lexiconIds[local];
+            double distance = EditDistance.weighted(word, lexicon.word(index));
             if (distance > maxDistance + EPSILON) {
                 continue;
             }
-            if (bestId < 0 || isBetter(distance, id, jaccard, bestDistance, bestId, bestJaccard)) {
-                bestId = id;
+            if (best < 0 || isBetter(distance, index, jaccard, bestDistance, best, bestJaccard)) {
+                best = index;
                 bestDistance = distance;
                 bestJaccard = jaccard;
             }
         }
         touched.clear();
-        return bestId < 0 ? null : vocabulary[bestId];
+        return best;
     }
 
-    private boolean isBetter(double distance, int id, double jaccard,
-                             double bestDistance, int bestId, double bestJaccard) {
+    private boolean isBetter(double distance, int index, double jaccard,
+                             double bestDistance, int best, double bestJaccard) {
         if (Math.abs(distance - bestDistance) > EPSILON) {
             return distance < bestDistance;
         }
-        if (documentFrequency[id] != documentFrequency[bestId]) {
-            return documentFrequency[id] > documentFrequency[bestId];
+        int frequency = lexicon.documentFrequency(index);
+        int bestFrequency = lexicon.documentFrequency(best);
+        if (frequency != bestFrequency) {
+            return frequency > bestFrequency;
         }
         if (Math.abs(jaccard - bestJaccard) > EPSILON) {
             return jaccard > bestJaccard;
         }
-        return id < bestId; // vocabulary is sorted, so this is alphabetical
+        return index < best;
     }
 
-    private static boolean isCorrectable(String term) {
-        if (term.length() < MIN_TERM_LENGTH || term.length() > MAX_TERM_LENGTH) {
+    private static boolean isCorrectable(String word) {
+        if (word.length() < MIN_WORD_LENGTH || word.length() > MAX_WORD_LENGTH) {
             return false;
         }
-        for (int i = 0; i < term.length(); i++) {
-            if (Character.isLetter(term.charAt(i))) {
+        for (int i = 0; i < word.length(); i++) {
+            if (Character.isLetter(word.charAt(i))) {
                 return true;
             }
         }
         return false;
     }
 
-    static Set<String> bigrams(String term) {
-        String padded = WORD_START + term + WORD_END;
+    static Set<String> bigrams(String word) {
+        String padded = "\u0002" + word + "\u0003";
         Set<String> bigrams = new LinkedHashSet<>();
         for (int i = 0; i + 2 <= padded.length(); i++) {
             bigrams.add(padded.substring(i, i + 2));
