@@ -1,0 +1,14 @@
+{
+  "name": "ase-ui-tests",
+  "private": true,
+  "description": "Smoke tests for the search page (jsdom)",
+  "scripts": {
+    "test": "node ui-test.js"
+  },
+  "devDependencies": {
+    "jsdom": "24.1.3"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
