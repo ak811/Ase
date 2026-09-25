@@ -1,0 +1,10 @@
+.git
+.gradle
+**/build
+**/out
+*.idx
+data
+node_modules
+ui-tests/node_modules
+.idea
+.vscode
