@@ -1,0 +1,2 @@
+Searching Chinese and Japanese text
+Chinese and Japanese are written without spaces between words, so a search engine cannot split them on whitespace. A simple and robust approach is to index overlapping pairs of characters, called bigrams. The word 東京大学 (University of Tokyo) becomes 東京, 京大 and 大学. A query is split the same way, and phrase or proximity matching keeps the pairs together. Dictionary-based segmenters produce cleaner words but need large language-specific dictionaries.

@@ -1,0 +1,2 @@
+Stemming and lemmatization
+Stemming reduces related word forms to a common stem so that a search for "running" also finds "runs" and "run". The Porter stemmer, published by Martin Porter in 1980, is a widely used rule-based stemmer for English. It removes suffixes such as -ing, -ed, -ness and -ational in several steps. Stemming is fast and language-specific; lemmatization is a slower alternative that uses a dictionary to map each word to its base form. For languages such as Persian, light stemmers remove only unambiguous suffixes like the plural marker -ha.

@@ -1,0 +1,2 @@
+TF-IDF
+TF-IDF (term frequency–inverse document frequency) is a classic way to weigh words in information retrieval. Term frequency measures how often a word occurs in a document; inverse document frequency lowers the weight of words that occur in many documents, such as "the" or "and". Documents and queries can be represented as TF-IDF vectors and compared with cosine similarity. BM25 can be seen as a refinement of TF-IDF with better handling of term saturation and document length.
