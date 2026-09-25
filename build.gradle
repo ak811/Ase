@@ -1,3 +1,20 @@
-plugins {
-    id 'com.android.application' version '8.7.3' apply false
+// Shared settings for every module. Module-specific plugins and dependencies live in each build.gradle.
+subprojects {
+    group = 'io.github.ak811.ase'
+    version = '2.0.0'
+
+    tasks.withType(JavaCompile).configureEach {
+        options.release = 17
+        options.encoding = 'UTF-8'
+        options.compilerArgs += ['-Xlint:all']
+    }
+
+    tasks.withType(Test).configureEach {
+        useJUnit()
+        jvmArgs '-Dfile.encoding=UTF-8'
+        testLogging {
+            events 'failed'
+            exceptionFormat 'full'
+        }
+    }
 }
