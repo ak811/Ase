@@ -1,5 +1,5 @@
 # Ase
-## Multilingual BM25 search in Java: SPIMI, phrase queries, Porter stemming, Jaccard spell correction
+## Multilingual BM25 search engine in Java: SPIMI, positional phrase queries, Porter stemming, Jaccard spell correction
 
 A self-hosted search engine with a web page and JSON API. Index your documents, then search them in
 English, Persian (فارسی), Arabic, French, German, Spanish, Russian, Chinese, Japanese and most other
