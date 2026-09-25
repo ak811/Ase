@@ -1,0 +1,25 @@
+plugins {
+    id 'application'
+}
+
+description = 'Web server: search page and JSON API (JDK only)'
+
+application {
+    mainClass = 'io.github.ak811.ase.server.WebServer'
+    applicationName = 'ase-server'
+    // No -Xmx here: size the heap with JAVA_OPTS (e.g. -Xmx512m or -XX:MaxRAMPercentage=75).
+    applicationDefaultJvmArgs = ['-Dfile.encoding=UTF-8', '-Dstdout.encoding=UTF-8', '-XX:+ExitOnOutOfMemoryError']
+}
+
+dependencies {
+    implementation project(':search-core')
+    testImplementation 'junit:junit:4.13.2'
+}
+
+// ./gradlew run  →  builds the sample index and serves it on http://127.0.0.1:8080/
+// Pass your own options with: ./gradlew run --args="--index path/to/index.idx --port 9000"
+tasks.named('run') {
+    workingDir = rootProject.projectDir
+    dependsOn ':indexer:sampleIndex'
+    args '--index', 'build/sample.idx'
+}

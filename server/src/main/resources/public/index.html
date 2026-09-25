@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Multilingual full-text search">
+  <title>{{SITE_NAME}}</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/styles.css">
+  <script src="/assets/app.js" defer></script>
+</head>
+<body class="is-home">
+  <a class="skip-link" href="#results">Skip to results</a>
+
+  <header class="site-header">
+    <a class="brand" href="/" id="brand">
+      <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+      <span id="site-name">{{SITE_NAME}}</span>
+    </a>
+    <form class="search" id="search-form" role="search" action="/" method="get" autocomplete="off">
+      <div class="search-box">
+        <input id="q" name="q" type="search" dir="auto" maxlength="1000"
+               placeholder="Search in any language…" aria-label="Search"
+               role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggestions"
+               spellcheck="false" autocapitalize="off" enterkeyhint="search">
+        <button type="submit" class="search-button" aria-label="Search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+        </button>
+      </div>
+      <ul id="suggestions" class="suggestions" role="listbox" aria-label="Suggestions" hidden></ul>
+    </form>
+  </header>
+
+  <main id="main">
+    <section class="home" id="home">
+      <p class="tagline" id="tagline">Search in English, فارسی, Français, Deutsch, Русский, 中文 and more.</p>
+      <p class="tips">
+        <span><kbd>"exact phrase"</kbd> exact words in order</span>
+        <span><kbd>-word</kbd> exclude</span>
+        <span><kbd>prefix*</kbd> any ending</span>
+        <span><kbd>/</kbd> focus search</span>
+      </p>
+    </section>
+
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <p id="correction" class="correction" hidden></p>
+    <ol id="results" class="results" tabindex="-1" aria-label="Search results"></ol>
+    <nav id="pager" class="pager" aria-label="Result pages" hidden></nav>
+  </main>
+
+  <footer class="site-footer">
+    <span id="footer-stats"></span>
+  </footer>
+
+  <dialog id="viewer" class="viewer" aria-labelledby="viewer-title">
+    <article>
+      <header class="viewer-header">
+        <h2 id="viewer-title" dir="auto"></h2>
+        <button type="button" id="viewer-close" class="viewer-close" aria-label="Close">×</button>
+      </header>
+      <p id="viewer-meta" class="viewer-meta" dir="auto"></p>
+      <div id="viewer-body" class="viewer-body" dir="auto"></div>
+    </article>
+  </dialog>
+
+  <noscript><p class="noscript">This search page needs JavaScript. The JSON API is available at <code>/api/search?q=…</code>.</p></noscript>
+</body>
+</html>
